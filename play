@@ -1,0 +1,2 @@
+#!/bin/bash
+ansible-playbook -i inventory.yaml -f 10 $1

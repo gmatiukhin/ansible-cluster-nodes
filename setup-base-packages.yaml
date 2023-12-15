@@ -1,0 +1,14 @@
+- name: Setup different packages that make life easier
+  hosts: nettops
+  become: yes
+  gather_facts: no
+
+  tasks:
+  - name: Ensure that byobu is installed
+    ansible.builtin.apt:
+      name: byobu
+      state: present
+  - name: Ensure that neovim is installed
+    ansible.builtin.apt:
+      name: neovim
+      state: present

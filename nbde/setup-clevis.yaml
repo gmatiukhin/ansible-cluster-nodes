@@ -1,0 +1,81 @@
+- name: Setup Clevis for disk decryption at boot
+  hosts: nettops
+  become: yes
+  gather_facts: no
+
+  vars_prompt:
+  - name: luks_password
+    prompt: Please enter your LUKS password
+
+  tasks:
+  - name: Ensure that clevis is installed
+    ansible.builtin.apt:
+      name: clevis
+      state: present
+  - name: Ensure that clevis-luks is installed
+    ansible.builtin.apt:
+      name: clevis-luks
+      state: present
+  - name: Ensure that clevis-initramfs is installed
+    ansible.builtin.apt:
+      name: clevis-initramfs
+      state: present
+  - name: Check that the encrypted disk is /dev/sda5
+    command: cryptsetup luksDump /dev/sda5
+  - name: Bind Clevis to Tang server
+    shell: >-
+      bash -c
+      "sudo clevis luks bind -y -d /dev/sda5 tang '{\"url\": \"https://tang.gmatiukhin.site\"}' <<< \"{{ luks_password }}\""
+  - name: Create initramfs hook file
+    ansible.builtin.copy:
+      dest: /etc/initramfs-tools/hooks/preclevis
+      mode: u+rwx
+      owner: root
+      content: |
+        #!/bin/sh
+        PREREQ=""
+        prereqs()
+        {
+                echo "$PREREQ"
+        }
+        case $1 in
+        # get pre-requisites	
+        prereqs)
+                prereqs
+                exit 0
+                ;;
+        esac
+        . /usr/share/initramfs-tools/hook-functions
+        copy_exec /usr/lib/*/libnss_dns.so*
+        mkdir -p "${DESTDIR}/etc/ssl"
+        cp -a /etc/ssl/certs "${DESTDIR}/etc/ssl/certs"
+  - name: Create initramfs premount script file
+    ansible.builtin.copy:
+      dest: /etc/initramfs-tools/scripts/init-premount/preclevis
+      owner: root
+      mode: u+rwx
+      content: |
+        #!/bin/sh
+        PREREQ=""
+        prereqs()
+        {
+          echo "$PREREQ"
+        }
+        case $1 in
+        # get pre-requisites
+        prereqs)
+          prereqs
+          exit 0
+          ;;
+        esac
+        . /scripts/functions
+        configure_networking
+        if ! [ -s /etc/resolv.conf ]; then
+          for ns in "$IPV6DNS0" "$IPV6DNS1" "$IPV4DNS0" "$IPV4DNS1"; do
+            if [ -n "$ns" -a "$ns" != "0.0.0.0" ]; then
+              echo "nameserver $ns" >> /etc/resolv.conf
+            fi
+          done
+        fi
+  - name: Update initramfs to include Clevis unlock
+    command: "update-initramfs -u -k 'all'"

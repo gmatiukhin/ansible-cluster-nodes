@@ -1,0 +1,13 @@
+- name: Check host liveliness
+  hosts: nettops
+
+  tasks:
+  - name: Try running a command
+    command: echo "Hello World!"
+  - name: Try running a command as become
+    become: yes
+    command: whoami
+    register: whoami_output
+# TODO: how does debug work???
+#  - name: Check that become succeeded
+#    debug: "{{ansible_facts['hostname']}} = {{whoami_output}}"
