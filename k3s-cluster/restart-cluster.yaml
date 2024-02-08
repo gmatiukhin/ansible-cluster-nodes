@@ -1,0 +1,21 @@
+- name: Restart k3s on servers
+  hosts: servers
+  become: yes
+  gather_facts: no
+
+  tasks:
+  - name: Restart k3s
+    systemd_service:
+      name: k3s.service
+      state: restarted
+
+- name: Restart k3s on agents
+  hosts: agents
+  become: yes
+  gather_facts: no
+
+  tasks:
+  - name: Restart k3s-agent
+    systemd_service:
+      name: k3s-agent.service
+      state: restarted

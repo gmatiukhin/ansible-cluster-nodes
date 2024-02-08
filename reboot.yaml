@@ -1,0 +1,8 @@
+- name: Reboot nettops
+  hosts: nettops
+  become: yes
+  gather_facts: no
+
+  tasks:
+  - name: Reboot hosts
+    reboot:

@@ -1,0 +1,137 @@
+- name: General k3s config
+  hosts: nettops
+  become: yes
+  gather_facts: no
+
+  vars_prompt:
+  - name: url
+    prompt: Please enter k3s server url
+  - name: token
+    prompt: Please enter k3s token
+  - name: network_id
+    prompt: Please enter ZT network ID for the cluster
+
+  tasks:
+  - name: Set common facts
+    ansible.builtin.set_fact:
+      k3s_url: "{{ url }}"
+      k3s_token: "{{ token }}"
+      zerotier_network_id: "{{ network_id }}"
+  - name: Collect ZT network data
+    shell: zerotier-cli listnetworks
+    register: zerotier_output
+  - name: Set fact about node IP in ZT network
+    set_fact:
+      node_ip: "{{ (((zerotier_output['stdout_lines'] | select('regex', '.*' + zerotier_network_id + '.*'))[0] | split)[8] | split('/'))[0] }}"
+  - name: Ensure open-iscsi is installed
+    apt:
+      name: open-iscsi
+      state: present
+  - name: Ensure iscsid is enabled and running
+    systemd_service:
+      name: iscsid.service
+      enabled: true
+      state: started
+  - name: Configure ZeroTier blacklist rules
+    ansible.builtin.copy:
+      dest: /var/lib/zerotier-one/local.conf
+      owner: root
+      content: |
+        {
+          "physical": {
+            "10.8.0.0/16": {
+              "blacklist": true
+            }
+          }
+        }
+  - name: Ensure `/etc/rancher/k3s/` dir exists
+    file: 
+      path: "/etc/rancher/k3s/"
+      state: directory
+          
+- name: k3s servers
+  hosts: servers
+  become: yes
+  gather_facts: no
+
+  tasks:
+  - name: Create k3s config file
+    ansible.builtin.copy:
+      dest: /etc/rancher/k3s/config.yaml
+      owner: root
+      content: |
+        write-kubeconfig-mode: "0644"
+        cluster-cidr: 10.8.0.0/16
+        service-cidr: 10.14.0.0/16
+        tls-san:
+        - "gmatiukhin.site"
+        - "k3s.gmatiukhin.site"
+        - "{{ k3s_url }}"
+        node-ip: {{ node_ip }}
+        token: {{ k3s_token }}
+        server: https://{{ k3s_url }}:6443
+        flannel-backend: none
+        disable-network-policy: true
+  - name: Install k3s server
+    shell: curl -sfL https://get.k3s.io | sh -s - server 
+
+- name: k3s agents
+  hosts: nettops
+  become: yes
+  gather_facts: no
+
+  tasks:
+  - name: Create k3s config file
+    ansible.builtin.copy:
+      dest: /etc/rancher/k3s/config.yaml
+      owner: root
+      content: |
+        node-ip: {{ node_ip }}
+        token: {{ k3s_token }}
+        server: https://{{ k3s_url }}:6443
+  - name: Install k3s agent
+    shell: curl -sfL https://get.k3s.io | sh -s - agent
+
+
+- name: Configure DNS on nodes so that k8s services are reachable from hosts by their names
+  hosts: nettops
+  become: yes
+  gather_facts: no
+
+  tasks:
+  - name: Ensure that resolvconf is installed
+    ansible.builtin.apt:
+      name: resolvconf
+      state: present
+  - name: Configure DNS settings for nodes
+    ansible.builtin.copy:
+      dest: /etc/network/interfaces
+      mode: u+rwx
+      owner: root
+      content: |
+        # This file describes the network interfaces available on your system
+        # and how to activate them. For more information, see interfaces(5).
+
+        source /etc/network/interfaces.d/*
+
+        # The loopback network interface
+        auto lo
+        iface lo inet loopback
+
+        # The primary network interface
+        allow-hotplug enp5s0
+        iface enp5s0 inet dhcp
+                dns-nameservers 10.14.0.10 10.42.0.3
+                dns-search svc.cluster.local cluster.local
+  - name: Restart networking to apply changes
+    systemd_service:
+      name: networking.service
+      state: restarted
+
+
+- name: Additional packages for the cluster
+
+  tasks:
+    ansible.builtin.apt:
+      name: nfs-common
+      state: present

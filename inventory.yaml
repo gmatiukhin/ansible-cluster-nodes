@@ -1,4 +1,5 @@
-nettops:
+servers:
+agents:
   hosts:
     ceres:
       ansible_host: 10.42.56.77
@@ -30,3 +31,7 @@ nettops:
       ansible_ssh_private_key_file: ./keys/id_ed25519
       ansible_user: ansible
       become_method: sudo
+nettops:
+  children:
+    servers:
+    agents:
