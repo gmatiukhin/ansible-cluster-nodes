@@ -48,7 +48,19 @@
     file: 
       path: "/etc/rancher/k3s/"
       state: directory
+    - name: Create registry config file
+    ansible.builtin.copy:
+      dest: /etc/rancher/k3s/registries.yaml
+      mode: u+rw
+      owner: root
+      content: |
+        configs:
+          "registry.gmatiukhin.site:5000"
+            auth:
+              username: kubernetes
+              password: {{ registry_password }}
           
+
 - name: k3s servers
   hosts: servers
   become: yes
