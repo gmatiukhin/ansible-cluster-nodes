@@ -10,6 +10,8 @@
     prompt: Please enter k3s token
   - name: network_id
     prompt: Please enter ZT network ID for the cluster
+  - name: registry_password
+    prompt: Please enter private registry password for user `kubernetes`
 
   tasks:
   - name: Set common facts
@@ -48,14 +50,14 @@
     file: 
       path: "/etc/rancher/k3s/"
       state: directory
-    - name: Create registry config file
+  - name: Create registry config file
     ansible.builtin.copy:
       dest: /etc/rancher/k3s/registries.yaml
       mode: u+rw
       owner: root
       content: |
         configs:
-          "registry.gmatiukhin.site:5000"
+          "registry.gmatiukhin.site:5000":
             auth:
               username: kubernetes
               password: {{ registry_password }}
@@ -82,13 +84,14 @@
         node-ip: {{ node_ip }}
         token: {{ k3s_token }}
         server: https://{{ k3s_url }}:6443
-        flannel-backend: none
-        disable-network-policy: true
+        flannel-iface: ztwziqfn4m
+        flannel-backend: wireguard-native
+        node-label: toplogy.kubernetes.io/zone=lab
   - name: Install k3s server
     shell: curl -sfL https://get.k3s.io | sh -s - server 
 
 - name: k3s agents
-  hosts: nettops
+  hosts: agents
   become: yes
   gather_facts: no
 
@@ -101,6 +104,8 @@
         node-ip: {{ node_ip }}
         token: {{ k3s_token }}
         server: https://{{ k3s_url }}:6443
+        node-label: toplogy.kubernetes.io/zone=lab
+        flannel-iface: ztwziqfn4m
   - name: Install k3s agent
     shell: curl -sfL https://get.k3s.io | sh -s - agent
 
@@ -142,8 +147,12 @@
 
 
 - name: Additional packages for the cluster
+  hosts: nettops
+  become: yes
+  gather_facts: no
 
   tasks:
+  - name: Ensure nfs-common are installed on the nettops
     ansible.builtin.apt:
       name: nfs-common
       state: present
