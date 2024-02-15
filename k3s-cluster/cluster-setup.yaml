@@ -57,7 +57,7 @@
       owner: root
       content: |
         configs:
-          "registry.gmatiukhin.site:5000":
+          "registry.gmatiukhin.site":
             auth:
               username: kubernetes
               password: {{ registry_password }}
