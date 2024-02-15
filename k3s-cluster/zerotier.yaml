@@ -21,6 +21,7 @@
       then echo "$z" | sudo bash; fi
   - name: Test ZeroTier install
     shell: zerotier-cli info
+    changed_when: no
     register: zerotier_output
   - name: Assert ZeroTier is online
     assert:
@@ -32,6 +33,7 @@
     shell: "zerotier-cli join {{ zerotier_network_id }}"
   - name: Collect network data
     shell: zerotier-cli listnetworks
+    changed_when: no
     register: zerotier_output
   - name: Assert ZeroTier network joined successfully
     assert:

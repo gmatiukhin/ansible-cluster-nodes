@@ -21,6 +21,7 @@
       zerotier_network_id: "{{ network_id }}"
   - name: Collect ZT network data
     shell: zerotier-cli listnetworks
+    changed_when: no
     register: zerotier_output
   - name: Set fact about node IP in ZT network
     set_fact:
