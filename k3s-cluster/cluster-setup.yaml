@@ -87,7 +87,7 @@
         server: https://{{ k3s_url }}:6443
         flannel-iface: ztwziqfn4m
         flannel-backend: wireguard-native
-        node-label: toplogy.kubernetes.io/zone=lab
+        node-label: topology.kubernetes.io/zone=lab
   - name: Install k3s server
     shell: curl -sfL https://get.k3s.io | sh -s - server 
 
@@ -105,7 +105,7 @@
         node-ip: {{ node_ip }}
         token: {{ k3s_token }}
         server: https://{{ k3s_url }}:6443
-        node-label: toplogy.kubernetes.io/zone=lab
+        node-label: topology.kubernetes.io/zone=lab
         flannel-iface: ztwziqfn4m
   - name: Install k3s agent
     shell: curl -sfL https://get.k3s.io | sh -s - agent
