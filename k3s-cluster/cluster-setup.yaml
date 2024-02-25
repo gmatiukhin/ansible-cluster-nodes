@@ -1,5 +1,5 @@
 - name: General k3s config
-  hosts: nettops
+  hosts: nodes
   become: yes
   gather_facts: no
 
@@ -107,6 +107,7 @@
         server: https://{{ k3s_url }}:6443
         node-label: topology.kubernetes.io/zone=lab
         flannel-iface: ztwziqfn4m
+        node-label: topology.kubernetes.io/zone=lab
   - name: Install k3s agent
     shell: curl -sfL https://get.k3s.io | sh -s - agent
 

@@ -1,5 +1,5 @@
 - name: Setup Clevis for disk decryption at boot
-  hosts: nettops
+  hosts: nodes
   become: yes
   gather_facts: no
 

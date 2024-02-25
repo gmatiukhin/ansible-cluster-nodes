@@ -1,5 +1,5 @@
 - name: Remove k3s from servers
-  hosts: servers
+  hosts: nodes
   become: yes
   gather_facts: no
 

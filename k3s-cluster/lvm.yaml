@@ -1,5 +1,5 @@
 - name: Setup LVM partitions for cluster
-  hosts: nettops
+  hosts: nodes
   become: yes
   gather_facts: yes
 

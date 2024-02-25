@@ -1,5 +1,5 @@
 - name: Setup ZeroTier network
-  hosts: nettops
+  hosts: nodes
   become: yes
   gather_facts: yes
 

@@ -1,5 +1,5 @@
 - name: Setup different packages that make life easier
-  hosts: nettops
+  hosts: nodes
   become: yes
   gather_facts: no
 

@@ -1,5 +1,5 @@
 - name: Removes Tang pin from LUKS device
-  hosts: nettops
+  hosts: nodes
   become: yes
   gather_facts: no
 
