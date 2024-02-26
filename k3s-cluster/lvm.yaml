@@ -6,7 +6,7 @@
   tasks:
     - name: Set common facts
       ansible.builtin.set_fact:
-        volume_group: "{{ ansible_hostname|capitalize }}rvg"
+        volume_group: "{{ ansible_hostname|capitalize }}-vg"
 
 
 - name: Set common parameters for proxmox VMs
@@ -26,7 +26,7 @@
   gather_facts: yes
 
   tasks:
-    - name: Enlarge var volume
+    - name: Grow var volume
       lvol:
         vg: "{{ volume_group }}"
         lv: var

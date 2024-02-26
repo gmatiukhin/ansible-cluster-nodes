@@ -14,12 +14,14 @@
         regexp: '^dns-nameservers'
         state: present
         line: "dns-nameservers 10.14.0.10 10.42.0.3"
+        insertafter: "EOF"
     - name: Specify dns search
       lineinfile:
         path: /etc/network/interfaces
         regexp: '^dns-search'
         state: present
         line: "dns-search svc.cluster.local cluster.local"
+        insertafter: "EOF"
     - name: Restart networking to apply changes
       systemd_service:
         name: networking.service

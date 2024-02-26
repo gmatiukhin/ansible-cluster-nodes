@@ -12,7 +12,7 @@ all:
       ansible_host: 10.42.56.81
     europa:
       ansible_host: 10.42.56.82
-    pmox-k3s-node:
+    proxmox1:
       ansible_host: 10.42.128.30
   vars:
     ansible_ssh_private_key_file: ./keys/id_ed25519
@@ -27,10 +27,10 @@ agents:
     hygiea:
     interamnia:
     europa:
-    pmox-k3s-node:
+    proxmox1:
 proxmox:
   hosts:
-    pmox-k3s-node:
+    proxmox1:
 nettops:
   hosts:
     ceres:

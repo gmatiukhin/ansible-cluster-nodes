@@ -1,5 +1,5 @@
 - name: Restart k3s on servers
-  hosts: nodes
+  hosts: servers
   become: yes
   gather_facts: no
 
