@@ -1,62 +1,84 @@
+- name: Set common parameters for nettops
+  hosts: nettops
+  become: yes
+  gather_facts: yes
+
+  tasks:
+    - name: Set common facts
+      ansible.builtin.set_fact:
+        volume_group: "{{ ansible_hostname|capitalize }}rvg"
+
+
+- name: Set common parameters for proxmox VMs
+  hosts: proxmox
+  become: yes
+  gather_facts: yes
+
+  tasks:
+    - name: Set common facts
+      ansible.builtin.set_fact:
+        volume_group: "{{ ansible_hostname }}-vg"
+
+
 - name: Setup LVM partitions for cluster
   hosts: nodes
   become: yes
   gather_facts: yes
 
   tasks:
-  - name: Enlarge var volume
-    lvol:
-      vg: "{{ ansible_hostname|capitalize }}-vg"
-      lv: var
-      size: 20g
-      resizefs: true
+    - name: Enlarge var volume
+      lvol:
+        vg: "{{ volume_group }}"
+        lv: var
+        size: 20g
+        resizefs: true
 
-  - name: Create k3s volume
-    lvol:
-      vg: "{{ ansible_hostname|capitalize }}-vg"
-      lv: k3s_data
-      size: 20g
-  - name: Create filesystem for k3s volume
-    community.general.filesystem:
-      fstype: ext4
-      dev: "/dev/{{ ansible_hostname|capitalize }}-vg/k3s_data"
-  - name: Create mountpoint for k3s data
-    ansible.builtin.file:
-      path: /var/lib/rancher/k3s
-      owner: root
-      group: root
-      mode: "755"
-      state: directory
-  - name: Configure /etc/fstab for k3s data
-    ansible.posix.mount:
-      src: "/dev/{{ ansible_hostname|capitalize }}-vg/k3s_data"
-      path: /var/lib/rancher/k3s/
-      fstype: ext4
-      opts: "defaults"
-      state: mounted
-      boot: true
+    - name: Create k3s volume
+      lvol:
+        vg: "{{ volume_group }}"
+        lv: k3s_data
+        size: 20g
+    - name: Create filesystem for k3s volume
+      community.general.filesystem:
+        fstype: ext4
+        dev: "/dev/{{ volume_group }}/k3s_data"
+    - name: Create mountpoint for k3s data
+      ansible.builtin.file:
+        path: /var/lib/rancher/k3s
+        owner: root
+        group: root
+        mode: "755"
+        state: directory
+    - name: Configure /etc/fstab for k3s data
+      ansible.posix.mount:
+        src: "/dev/{{ volume_group }}/k3s_data"
+        path: /var/lib/rancher/k3s/
+        fstype: ext4
+        opts: "defaults"
+        state: mounted
+        boot: true
 
-  - name: Create storage volume
-    lvol:
-      vg: "{{ ansible_hostname|capitalize }}-vg"
-      lv: storage
-      size: +100%FREE
-  - name: Create filesystem for cluster storage
-    community.general.filesystem:
-      fstype: ext4
-      dev: "/dev/{{ ansible_hostname|capitalize }}-vg/storage"
-  - name: Create mountpoint for cluster storage
-    ansible.builtin.file:
-      path: /mnt/storage
-      owner: root
-      group: root
-      mode: "755"
-      state: directory
-  - name: Configure /etc/fstab for cluster storage
-    ansible.posix.mount:
-      src: "/dev/{{ ansible_hostname|capitalize }}-vg/storage"
-      path: /mnt/storage
-      fstype: ext4
-      opts: "defaults"
-      state: mounted
-      boot: true
+    - name: Create storage volume
+      lvol:
+        vg: "{{ volume_group }}"
+        lv: storage
+        size: +100%FREE
+    - name: Create filesystem for cluster storage
+      community.general.filesystem:
+        fstype: ext4
+        dev: "/dev/{{ volume_group }}/storage"
+    - name: Create mountpoint for cluster storage
+      ansible.builtin.file:
+        path: /mnt/storage
+        owner: root
+        group: root
+        mode: "755"
+        state: directory
+    - name: Configure /etc/fstab for cluster storage
+      ansible.posix.mount:
+        src: "/dev/{{ volume_group }}/storage"
+        path: /mnt/storage
+        fstype: ext4
+        opts: "defaults"
+        state: mounted
+        boot: true

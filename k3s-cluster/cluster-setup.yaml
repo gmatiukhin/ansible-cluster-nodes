@@ -1,3 +1,25 @@
+- name: Set topology facts for nettops
+  hosts: nettops
+  become: yes
+  gather_facts: no
+
+  tasks:
+  - name: Set common facts
+    ansible.builtin.set_fact:
+      topology_zone: lab
+
+
+- name: Set topology facts for nettops
+  hosts: proxmox
+  become: yes
+  gather_facts: no
+
+  tasks:
+  - name: Set common facts
+    ansible.builtin.set_fact:
+      topology_zone: proxmox
+
+
 - name: General k3s config
   hosts: nodes
   become: yes
@@ -85,11 +107,12 @@
         node-ip: {{ node_ip }}
         token: {{ k3s_token }}
         server: https://{{ k3s_url }}:6443
+        node-label: topology.kubernetes.io/zone={{ topology_zone }}
         flannel-iface: ztwziqfn4m
         flannel-backend: wireguard-native
-        node-label: topology.kubernetes.io/zone=lab
   - name: Install k3s server
     shell: curl -sfL https://get.k3s.io | sh -s - server 
+
 
 - name: k3s agents
   hosts: agents
@@ -105,56 +128,20 @@
         node-ip: {{ node_ip }}
         token: {{ k3s_token }}
         server: https://{{ k3s_url }}:6443
-        node-label: topology.kubernetes.io/zone=lab
+        node-label: topology.kubernetes.io/zone={{ topology_zone }}
         flannel-iface: ztwziqfn4m
-        node-label: topology.kubernetes.io/zone=lab
   - name: Install k3s agent
     shell: curl -sfL https://get.k3s.io | sh -s - agent
 
 
-- name: Configure DNS on nodes so that k8s services are reachable from hosts by their names
-  hosts: nettops
-  become: yes
-  gather_facts: no
-
-  tasks:
-  - name: Ensure that resolvconf is installed
-    ansible.builtin.apt:
-      name: resolvconf
-      state: present
-  - name: Configure DNS settings for nodes
-    ansible.builtin.copy:
-      dest: /etc/network/interfaces
-      mode: u+rwx
-      owner: root
-      content: |
-        # This file describes the network interfaces available on your system
-        # and how to activate them. For more information, see interfaces(5).
-
-        source /etc/network/interfaces.d/*
-
-        # The loopback network interface
-        auto lo
-        iface lo inet loopback
-
-        # The primary network interface
-        allow-hotplug enp5s0
-        iface enp5s0 inet dhcp
-                dns-nameservers 10.14.0.10 10.42.0.3
-                dns-search svc.cluster.local cluster.local
-  - name: Restart networking to apply changes
-    systemd_service:
-      name: networking.service
-      state: restarted
-
 
 - name: Additional packages for the cluster
-  hosts: nettops
+  hosts: nodes
   become: yes
   gather_facts: no
 
   tasks:
-  - name: Ensure nfs-common are installed on the nettops
+  - name: Ensure nfs-common are installed
     ansible.builtin.apt:
       name: nfs-common
       state: present

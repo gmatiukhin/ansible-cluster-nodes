@@ -1,41 +1,44 @@
+all:
+  hosts:
+    ceres:
+      ansible_host: 10.42.56.77
+    vesta:
+      ansible_host: 10.42.56.78
+    pallas:
+      ansible_host: 10.42.56.79
+    hygiea:
+      ansible_host: 10.42.56.80
+    interamnia:
+      ansible_host: 10.42.56.81
+    europa:
+      ansible_host: 10.42.56.82
+    pmox-k3s-node:
+      ansible_host: 10.42.128.30
+  vars:
+    ansible_ssh_private_key_file: ./keys/id_ed25519
+    ansible_user: ansible
+    become_method: sudo
 servers:
 agents:
   hosts:
     ceres:
-      ansible_host: 10.42.56.77
-      ansible_ssh_private_key_file: ./keys/id_ed25519
-      ansible_user: ansible
-      become_method: sudo
     vesta:
-      ansible_host: 10.42.56.78
-      ansible_ssh_private_key_file: ./keys/id_ed25519
-      ansible_user: ansible
-      become_method: sudo
     pallas:
-      ansible_host: 10.42.56.79
-      ansible_ssh_private_key_file: ./keys/id_ed25519
-      ansible_user: ansible
-      become_method: sudo
     hygiea:
-      ansible_host: 10.42.56.80
-      ansible_ssh_private_key_file: ./keys/id_ed25519
-      ansible_user: ansible
-      become_method: sudo
     interamnia:
-      ansible_host: 10.42.56.81
-      ansible_ssh_private_key_file: ./keys/id_ed25519
-      ansible_user: ansible
-      become_method: sudo
     europa:
-      ansible_host: 10.42.56.82
-      ansible_ssh_private_key_file: ./keys/id_ed25519
-      ansible_user: ansible
-      become_method: sudo
     pmox-k3s-node:
-      ansible_host: 10.42.128.30
-      ansible_ssh_private_key_file: ./keys/id_ed25519
-      ansible_user: ansible
-      become_method: sudo
+proxmox:
+  hosts:
+    pmox-k3s-node:
+nettops:
+  hosts:
+    ceres:
+    vesta:
+    pallas:
+    hygiea:
+    interamnia:
+    europa:
 nodes:
   children:
     servers:

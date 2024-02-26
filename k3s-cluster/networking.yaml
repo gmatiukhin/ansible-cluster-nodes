@@ -1,0 +1,26 @@
+- name: Configure DNS on nodes so that k8s services are reachable from hosts by their names
+  hosts: nodes
+  become: yes
+  gather_facts: no
+
+  tasks:
+    - name: Ensure that resolvconf is installed
+      ansible.builtin.apt:
+        name: resolvconf
+        state: present
+    - name: Specify nameservers
+      lineinfile:
+        path: /etc/network/interfaces
+        regexp: '^dns-nameservers'
+        state: present
+        line: "dns-nameservers 10.14.0.10 10.42.0.3"
+    - name: Specify dns search
+      lineinfile:
+        path: /etc/network/interfaces
+        regexp: '^dns-search'
+        state: present
+        line: "dns-search svc.cluster.local cluster.local"
+    - name: Restart networking to apply changes
+      systemd_service:
+        name: networking.service
+        state: restarted

@@ -1,5 +1,5 @@
 - name: Check host liveliness
-  hosts: nettops
+  hosts: nodes
 
   tasks:
   - name: Try running a command

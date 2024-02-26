@@ -1,2 +1,2 @@
 #!/bin/bash
-ansible-playbook -i inventory.yaml -f 10 $1
+ansible-playbook -i inventory.yaml -f 10 "$@"
