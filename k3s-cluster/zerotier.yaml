@@ -8,6 +8,10 @@
     prompt: Please enter the network ID
 
   tasks:
+  - name: Ensure that curl is installed
+    ansible.builtin.apt:
+      name: curl
+      state: present
   - name: Ensure that gpg is installed
     ansible.builtin.apt:
       name: gpg
