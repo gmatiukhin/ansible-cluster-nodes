@@ -1,28 +1,5 @@
-- name: Set topology facts for nettops
-  hosts: nettops
-  become: yes
-  gather_facts: no
-
-  tasks:
-  - name: Set common facts
-    ansible.builtin.set_fact:
-      topology_zone: lab
-
-
-- name: Set topology facts for nettops
-  hosts: proxmox
-  become: yes
-  gather_facts: no
-
-  tasks:
-  - name: Set common facts
-    ansible.builtin.set_fact:
-      topology_zone: proxmox
-
-
-- name: General k3s config
+- name: Ask user for cluster info
   hosts: nodes
-  become: yes
   gather_facts: no
 
   vars_prompt:
@@ -41,6 +18,36 @@
       k3s_url: "{{ url }}"
       k3s_token: "{{ token }}"
       zerotier_network_id: "{{ network_id }}"
+      registry_password: "{{ registry_password }}"
+
+- name: Set topology facts for nettops
+  hosts: nettops
+  become: yes
+  gather_facts: no
+
+  tasks:
+  - name: Set `lab` as a zone for nettops
+    ansible.builtin.set_fact:
+      topology_zone: lab
+
+
+- name: Set topology facts for proxmox VMs
+  hosts: proxmox
+  become: yes
+  gather_facts: no
+
+  tasks:
+  - name: Set `proxmox` as a zone for proxmox VMs
+    ansible.builtin.set_fact:
+      topology_zone: proxmox
+
+
+- name: General k3s config
+  hosts: nodes
+  become: yes
+  gather_facts: no
+
+  tasks:
   - name: Collect ZT network data
     shell: zerotier-cli listnetworks
     changed_when: no
@@ -48,6 +55,10 @@
   - name: Set fact about node IP in ZT network
     set_fact:
       node_ip: "{{ (((zerotier_output['stdout_lines'] | select('regex', '.*' + zerotier_network_id + '.*'))[0] | split)[8] | split('/'))[0] }}"
+  - name: Ensure curl is installed
+    apt:
+      name: curl
+      state: present
   - name: Ensure open-iscsi is installed
     apt:
       name: open-iscsi
