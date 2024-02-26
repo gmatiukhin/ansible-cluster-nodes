@@ -29,8 +29,14 @@
       - (zerotier_output['stdout'] | split)[-1] == "ONLINE"
       success_msg: "Host {{ ansible_hostname}} has address: {{ (zerotier_output['stdout'] | split)[2] }}"
       fail_msg: "Host {{ ansible_hostname }} is not online."
+  - name: Save address to a variable
+    ansible.builtin.set_fact:
+      zt_address: "{{ (zerotier_output['stdout'] | split)[2] }}"
   - name: Join network
     shell: "zerotier-cli join {{ zerotier_network_id }}"
+  - name: Wait for authorization
+    pause:
+      prompt: Please authorize this host `{{ ansible_hostname }}` with address `{{ zt_address }}` in the controller UI. Press Enter when you are done.
   - name: Collect network data
     shell: zerotier-cli listnetworks
     changed_when: no
@@ -40,4 +46,4 @@
       that:
       - ((zerotier_output['stdout_lines'] | select('regex', '.*' + zerotier_network_id + '.*'))[0] | split)[5] == "OK"
       success_msg: "Host {{ ansible_hostname }} has joined the network {{ zerotier_network_id }} successfully."
-      fail_msg: "Host {{ ansible_hostname }} could not join the network {{ zerotier_network_id }}. You may need to authorize it in the controller UI."
+      fail_msg: "Host {{ ansible_hostname }} could not join the network {{ zerotier_network_id }}."
