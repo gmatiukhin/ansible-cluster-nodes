@@ -1,0 +1,14 @@
+- name: Check root privileges on hosts
+  hosts: nodes
+
+  tasks:
+  - name: Try running a command
+    command: echo "Hello World!"
+  - name: Try running a command as root
+    become: yes
+    command: whoami
+    register: whoami_output
+  - name: Assert that can become root
+    ansible.builtin.assert:
+      that:
+        - whoami_output["stdout"] == "root"
