@@ -1,0 +1,11 @@
+- name: Ignore power button for poweroff
+  hosts: nettops
+  become: yes
+  gather_facts: no
+
+  tasks:
+  - name: Prevent power button
+    ansible.builtin.lineinfile:
+      path: /etc/systemd/logind.conf
+      regexp: '^#HandlePowerKey=.*$'
+      line: 'HandlePowerKey=ignore'
