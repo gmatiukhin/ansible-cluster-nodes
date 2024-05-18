@@ -22,6 +22,7 @@
       state: present
   - name: Check that the encrypted disk is /dev/sda5
     command: cryptsetup luksDump /dev/sda5
+    changed_when: no
   - name: Bind Clevis to Tang server
     shell: >-
       bash -c

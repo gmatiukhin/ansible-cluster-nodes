@@ -1,0 +1,43 @@
+- name: Set common parameters for nettops
+  hosts: nettops
+  become: yes
+  gather_facts: yes
+
+  tasks:
+    - name: Set common facts
+      ansible.builtin.set_fact:
+        volume_group: "{{ ansible_hostname|capitalize }}-vg"
+
+
+- name: Set common parameters for proxmox VMs
+  hosts: proxmox
+  become: yes
+  gather_facts: yes
+
+  tasks:
+    - name: Set common facts
+      ansible.builtin.set_fact:
+        volume_group: "{{ ansible_hostname }}-vg"
+
+
+- name: Remove storage LVM partition
+  hosts: nodes
+  become: yes
+  gather_facts: yes
+
+  tasks:
+    - name: Remove /etc/fstab entry for cluster storage
+      ansible.posix.mount:
+        src: "/dev/{{ volume_group }}/storage"
+        path: /mnt/storage
+        state: unmounted
+    - name: Remove mountpoint for cluster storage
+      ansible.builtin.file:
+        path: /mnt/storage
+        state: absent
+    - name: Remove storage volume
+      lvol:
+        vg: "{{ volume_group }}"
+        lv: storage
+        state: absent
+        force: true
