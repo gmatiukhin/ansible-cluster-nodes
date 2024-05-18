@@ -1,5 +1,0 @@
-useradd -G sudo -m ansible && \
-mkdir -p /home/ansible/.ssh && \
-apt install curl sudo -y && \
-curl 10.42.1.76:8000/id_ed25519.pub >> /home/ansible/.ssh/authorized_keys && \
-echo "ansible ALL=(ALL:ALL) NOPASSWD: ALL" >> /etc/sudoers
