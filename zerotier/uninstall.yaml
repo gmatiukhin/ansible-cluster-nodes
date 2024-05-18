@@ -1,0 +1,15 @@
+- name: Uninstall ZeroTier
+  hosts: nodes
+  become: true
+  gather_facts: false
+
+  tasks:
+    - name: Uninstall ZeroTier apt package
+      ansible.builtin.apt:
+        name: zerotier-one
+        state: absent
+    - name: Remove ZeroTier GPG key
+      ansible.builtin.command: gpg --delete-key --batch --yes 'ZeroTier, Inc. (ZeroTier Support and Release Signing Key)'
+      register: output
+      changed_when: output.rc == 0
+      failed_when: false # Non-zero rc means that no such key exists

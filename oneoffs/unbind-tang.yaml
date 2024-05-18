@@ -1,0 +1,25 @@
+- name: Removes Tang pin from LUKS device
+  hosts: nodes
+  become: true
+  gather_facts: false
+
+  vars_prompt:
+    - name: luks_password
+      prompt: Please enter your LUKS password
+
+  tasks:
+    - name: Unbind previous Tang binding from slots
+      ansible.builtin.command:
+        cmd: "sudo clevis luks unbind -f -d /dev/sda5 -s {{ item }}"
+        stdin: "{{ luks_password }}"
+      register: unbind_out
+      changed_when: unbind_out.rc == 0
+      ignore_errors: true
+      loop:
+        - 1
+        - 2
+        - 3
+        - 4
+        - 5
+        - 6
+        - 7

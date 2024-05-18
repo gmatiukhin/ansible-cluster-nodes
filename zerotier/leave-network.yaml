@@ -1,0 +1,13 @@
+- name: Leave ZeroTier network
+  hosts: nodes
+  gather_facts: false
+  become: true
+
+  vars_prompt:
+    - name: zerotier_network_id
+      prompt: Please enter the network ID
+
+  tasks:
+    - name: Leave ZeroTier network
+      ansible.builtin.command: "zerotier-cli leave {{ zerotier_network_id }}"
+      changed_when: true

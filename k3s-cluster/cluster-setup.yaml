@@ -1,158 +1,160 @@
 - name: Ask user for cluster info
   hosts: nodes
-  gather_facts: no
+  gather_facts: false
 
   vars_prompt:
-  - name: url
-    prompt: Please enter k3s server url
-  - name: token
-    prompt: Please enter k3s token
-  - name: network_id
-    prompt: Please enter ZT network ID for the cluster
-  - name: registry_password
-    prompt: Please enter private registry password for user `kubernetes`
+    - name: url
+      prompt: Please enter k3s server url
+    - name: token
+      prompt: Please enter k3s token
+    - name: network_id
+      prompt: Please enter ZT network ID for the cluster
+    - name: registry_password
+      prompt: Please enter private registry password for user `kubernetes`
 
   tasks:
-  - name: Set common facts
-    ansible.builtin.set_fact:
-      k3s_url: "{{ url }}"
-      k3s_token: "{{ token }}"
-      zerotier_network_id: "{{ network_id }}"
-      registry_password: "{{ registry_password }}"
+    - name: Set common facts
+      ansible.builtin.set_fact:
+        k3s_url: "{{ url }}"
+        k3s_token: "{{ token }}"
+        zerotier_network_id: "{{ network_id }}"
+        registry_password: "{{ registry_password }}"
 
 - name: Set topology facts for nettops
   hosts: nettops
-  become: yes
-  gather_facts: no
+  become: true
+  gather_facts: false
 
   tasks:
-  - name: Set `lab` as a zone for nettops
-    ansible.builtin.set_fact:
-      topology_zone: lab
+    - name: Set `lab` as a zone for nettops
+      ansible.builtin.set_fact:
+        topology_zone: lab
 
 
 - name: Set topology facts for proxmox VMs
   hosts: proxmox
-  become: yes
-  gather_facts: no
+  become: true
+  gather_facts: false
 
   tasks:
-  - name: Set `proxmox` as a zone for proxmox VMs
-    ansible.builtin.set_fact:
-      topology_zone: proxmox
+    - name: Set `proxmox` as a zone for proxmox VMs
+      ansible.builtin.set_fact:
+        topology_zone: proxmox
 
 
 - name: General k3s config
   hosts: nodes
-  become: yes
-  gather_facts: no
+  become: true
+  gather_facts: false
 
   tasks:
-  - name: Collect ZT network data
-    shell: zerotier-cli listnetworks
-    changed_when: no
-    register: zerotier_output
-  - name: Set fact about node IP in ZT network
-    set_fact:
-      node_ip: "{{ (((zerotier_output['stdout_lines'] | select('regex', '.*' + zerotier_network_id + '.*'))[0] | split)[8] | split('/'))[0] }}"
-  - name: Ensure curl is installed
-    apt:
-      name: curl
-      state: present
-  - name: Ensure open-iscsi is installed
-    apt:
-      name: open-iscsi
-      state: present
-  - name: Ensure iscsid is enabled and running
-    systemd_service:
-      name: iscsid.service
-      enabled: true
-      state: started
-  - name: Configure ZeroTier blacklist rules
-    ansible.builtin.copy:
-      dest: /var/lib/zerotier-one/local.conf
-      owner: root
-      content: |
-        {
-          "physical": {
-            "10.8.0.0/16": {
-              "blacklist": true
+    - name: Collect ZT network data
+      ansible.builtin.command: zerotier-cli listnetworks
+      changed_when: false
+      register: zerotier_output
+    - name: Set fact about node IP in ZT network
+      ansible.builtin.set_fact:
+        node_ip: "{{ (((zerotier_output['stdout_lines'] | select('regex', '.*' + zerotier_network_id + '.*'))[0] | split)[8] | split('/'))[0] }}"
+    - name: Configure ZeroTier blacklist rules
+      ansible.builtin.copy:
+        dest: /var/lib/zerotier-one/local.conf
+        owner: root
+        mode: "0744"
+        content: |
+          {
+            "physical": {
+              "10.8.0.0/16": {
+                "blacklist": true
+              }
             }
           }
-        }
-  - name: Ensure `/etc/rancher/k3s/` dir exists
-    file: 
-      path: "/etc/rancher/k3s/"
-      state: directory
-  - name: Create registry config file
-    ansible.builtin.copy:
-      dest: /etc/rancher/k3s/registries.yaml
-      mode: u+rw
-      owner: root
-      content: |
-        configs:
-          "registry.gmatiukhin.site":
-            auth:
-              username: kubernetes
-              password: {{ registry_password }}
-          
+    - name: Ensure `/etc/rancher/k3s/` dir exists
+      ansible.builtin.file:
+        path: "/etc/rancher/k3s/"
+        state: directory
+        mode: "0744"
+    - name: Create registry config file
+      ansible.builtin.copy:
+        dest: /etc/rancher/k3s/registries.yaml
+        mode: "0744"
+        owner: root
+        content: |
+          configs:
+            "registry.gmatiukhin.site":
+              auth:
+                username: kubernetes
+                password: {{ registry_password }}
 
-- name: k3s servers
+
+- name: Servers
   hosts: servers
-  become: yes
-  gather_facts: no
+  become: true
+  gather_facts: false
 
   tasks:
-  - name: Create k3s config file
-    ansible.builtin.copy:
-      dest: /etc/rancher/k3s/config.yaml
-      owner: root
-      content: |
-        write-kubeconfig-mode: "0644"
-        cluster-cidr: 10.8.0.0/16
-        service-cidr: 10.14.0.0/16
-        tls-san:
-        - "gmatiukhin.site"
-        - "k3s.gmatiukhin.site"
-        - "{{ k3s_url }}"
-        node-ip: {{ node_ip }}
-        token: {{ k3s_token }}
-        server: https://{{ k3s_url }}:6443
-        node-label: topology.kubernetes.io/zone={{ topology_zone }}
-        flannel-iface: ztwziqfn4m
-        flannel-backend: wireguard-native
-  - name: Install k3s server
-    shell: curl -sfL https://get.k3s.io | sh -s - server 
+    - name: Create k3s config file
+      ansible.builtin.copy:
+        dest: /etc/rancher/k3s/config.yaml
+        owner: root
+        mode: "0744"
+        content: |
+          write-kubeconfig-mode: "0644"
+          cluster-cidr: 10.8.0.0/16
+          service-cidr: 10.14.0.0/16
+          tls-san:
+          - "gmatiukhin.site"
+          - "k3s.gmatiukhin.site"
+          - "{{ k3s_url }}"
+          node-ip: {{ node_ip }}
+          token: {{ k3s_token }}
+          server: https://{{ k3s_url }}:6443
+          node-label: topology.kubernetes.io/zone={{ topology_zone }}
+          flannel-iface: ztwziqfn4m
+          flannel-backend: wireguard-native
+    - name: Download k3s install script
+      ansible.builtin.uri:
+        url: https://get.k3s.io
+        dest: /tmp/install-k3s.sh
+        creates: /tmp/install-k3s.sh
+    - name: Install k3s server
+      ansible.builtin.command: bash /tmp/install-k3s.sh server
+      changed_when: true
 
 
-- name: k3s agents
+- name: Agents
   hosts: agents
-  become: yes
-  gather_facts: no
+  become: true
+  gather_facts: false
 
   tasks:
-  - name: Create k3s config file
-    ansible.builtin.copy:
-      dest: /etc/rancher/k3s/config.yaml
-      owner: root
-      content: |
-        node-ip: {{ node_ip }}
-        token: {{ k3s_token }}
-        server: https://{{ k3s_url }}:6443
-        node-label: topology.kubernetes.io/zone={{ topology_zone }}
-        flannel-iface: ztwziqfn4m
-  - name: Install k3s agent
-    shell: curl -sfL https://get.k3s.io | sh -s - agent
-
+    - name: Create k3s config file
+      ansible.builtin.copy:
+        dest: /etc/rancher/k3s/config.yaml
+        owner: root
+        mode: "0744"
+        content: |
+          node-ip: {{ node_ip }}
+          token: {{ k3s_token }}
+          server: https://{{ k3s_url }}:6443
+          node-label: topology.kubernetes.io/zone={{ topology_zone }}
+          flannel-iface: ztwziqfn4m
+    - name: Download k3s install script
+      ansible.builtin.uri:
+        url: https://get.k3s.io
+        dest: /tmp/install-k3s.sh
+        creates: /tmp/install-k3s.sh
+    - name: Install k3s agent
+      ansible.builtin.command: bash /tmp/install-k3s.sh agent
+      changed_when: true
 
 
 - name: Additional packages for the cluster
   hosts: nodes
-  become: yes
-  gather_facts: no
+  become: true
+  gather_facts: false
 
   tasks:
-  - name: Ensure nfs-common are installed
-    ansible.builtin.apt:
-      name: nfs-common
-      state: present
+    - name: Ensure nfs-common are installed
+      ansible.builtin.apt:
+        name: nfs-common
+        state: present

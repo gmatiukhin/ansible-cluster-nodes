@@ -1,18 +1,18 @@
 - name: Set common parameters for nettops
   hosts: nettops
-  become: yes
-  gather_facts: yes
+  become: true
+  gather_facts: true
 
   tasks:
     - name: Set common facts
       ansible.builtin.set_fact:
-        volume_group: "{{ ansible_hostname|capitalize }}-vg"
+        volume_group: "{{ ansible_hostname | capitalize }}-vg"
 
 
 - name: Set common parameters for proxmox VMs
   hosts: proxmox
-  become: yes
-  gather_facts: yes
+  become: true
+  gather_facts: true
 
   tasks:
     - name: Set common facts
@@ -22,19 +22,19 @@
 
 - name: Setup LVM partitions for cluster
   hosts: nodes
-  become: yes
-  gather_facts: yes
+  become: true
+  gather_facts: true
 
   tasks:
     - name: Grow var volume
-      lvol:
+      community.general.lvol:
         vg: "{{ volume_group }}"
         lv: var
         size: 20g
         resizefs: true
 
     - name: Create k3s volume
-      lvol:
+      community.general.lvol:
         vg: "{{ volume_group }}"
         lv: k3s_data
         size: 20g
@@ -59,7 +59,7 @@
         boot: true
 
     - name: Create storage volume
-      lvol:
+      community.general.lvol:
         vg: "{{ volume_group }}"
         lv: storage
         size: +100%FREE

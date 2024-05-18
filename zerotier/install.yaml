@@ -1,0 +1,93 @@
+- name: Import GPG keys for ZerotTier
+  hosts: nodes
+  become: true
+  gather_facts: false
+
+  tasks:
+    - name: Ensure that gpg is installed
+      ansible.builtin.apt:
+        name: gpg
+        state: present
+    - name: Download ZeroTier GPG key
+      ansible.builtin.uri:
+        url: https://raw.githubusercontent.com/zerotier/ZeroTierOne/master/doc/contact%40zerotier.com.gpg
+        dest: /tmp/zerotier-gpg.key
+        creates: /tmp/zerotier-gpg.key
+    - name: Import ZeroTier GPG key
+      ansible.builtin.command: "gpg --import /tmp/zerotier-gpg.key"
+      register: gpg_import
+      changed_when: (gpg_import['stderr_lines'][-1] | split)[-2] is match('.*imported.*')
+
+
+- name: Install ZeroTier
+  hosts: nodes
+  become: true
+  gather_facts: true
+
+  tasks:
+    - name: Ensure that curl is installed
+      ansible.builtin.apt:
+        name: curl
+        state: present
+    - name: Ensure that gpg is installed
+      ansible.builtin.apt:
+        name: gpg
+        state: present
+    - name: Download ZeroTier install script
+      ansible.builtin.uri:
+        url: https://install.zerotier.com/
+        dest: /tmp/install-zt.sh
+        creates: /tmp/install-zt.sh
+    - name: Verify ZeroTier install script
+      ansible.builtin.command: gpg --verify /tmp/install-zt.sh
+      changed_when: false
+    - name: Install ZeroTier
+      ansible.builtin.command: bash /tmp/install-zt.sh
+      changed_when: true
+    - name: Test ZeroTier install
+      ansible.builtin.command: zerotier-cli info
+      changed_when: false
+      register: zerotier_output
+    - name: Assert host is online
+      ansible.builtin.assert:
+        that:
+          - (zerotier_output['stdout'] | split)[-1] == "ONLINE"
+        success_msg: "Host {{ ansible_hostname }} has address: {{ (zerotier_output['stdout'] | split)[2] }}"
+        fail_msg: "Host {{ ansible_hostname }} is not online."
+    - name: Save host address to a variable
+      ansible.builtin.set_fact:
+        zt_address: "{{ (zerotier_output['stdout'] | split)[2] }}"
+
+
+- name: Setup ZeroTier network
+  hosts: nodes
+  become: true
+  gather_facts: true
+
+  vars_prompt:
+    - name: zerotier_network_id
+      prompt: Please enter the network ID
+
+  tasks:
+    - name: Join ZeroTier network
+      ansible.builtin.command: "zerotier-cli join {{ zerotier_network_id }}"
+      changed_when: true
+    - name: Wait for authorization
+      ansible.builtin.pause:
+        prompt: |-
+          ZeroTier addresses for hosts:
+          {% for i in (hostvars.keys() | zip(hostvars.keys() | map('extract', hostvars, 'zt_address'))) %}
+          {{ i[0] }}: {{ i[1] }}
+          {% endfor %}
+          Please authorize these hosts in the controller UI.
+          Press Enter when you are done
+    - name: Collect network data
+      ansible.builtin.command: zerotier-cli listnetworks
+      changed_when: false
+      register: zerotier_output
+    - name: Assert ZeroTier network joined successfully
+      ansible.builtin.assert:
+        that:
+          - ((zerotier_output['stdout_lines'] | select('regex', '.*' + zerotier_network_id + '.*'))[0] | split)[5] == "OK"
+        success_msg: "Host {{ ansible_hostname }} has joined the network {{ zerotier_network_id }} successfully."
+        fail_msg: "Host {{ ansible_hostname }} could not join the network {{ zerotier_network_id }}."

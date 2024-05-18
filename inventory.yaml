@@ -18,19 +18,7 @@ all:
     ansible_ssh_private_key_file: ./keys/id_ed25519
     ansible_user: ansible
     become_method: sudo
-servers:
-agents:
-  hosts:
-    ceres:
-    vesta:
-    pallas:
-    hygiea:
-    interamnia:
-    europa:
-    proxmox1:
-proxmox:
-  hosts:
-    proxmox1:
+
 nettops:
   hosts:
     ceres:
@@ -39,6 +27,17 @@ nettops:
     hygiea:
     interamnia:
     europa:
+
+proxmox:
+  hosts:
+    proxmox1:
+
+servers:
+agents:
+  children:
+    proxmox:
+    nettops:
+
 nodes:
   children:
     servers:
