@@ -1,21 +1,21 @@
-- name: Set common parameters for nettops
+- name: Set common facts for nettops
   hosts: nettops
   become: true
   gather_facts: true
 
   tasks:
-    - name: Set common facts
+    - name: Set common facts for nettops
       ansible.builtin.set_fact:
         volume_group: "{{ ansible_hostname | capitalize }}-vg"
 
 
-- name: Set common parameters for proxmox VMs
+- name: Set common facts for proxmox VMs
   hosts: proxmox
   become: true
   gather_facts: true
 
   tasks:
-    - name: Set common facts
+    - name: Set common facts for proxmox VMs
       ansible.builtin.set_fact:
         volume_group: "{{ ansible_hostname }}-vg"
 
@@ -23,7 +23,7 @@
 - name: Setup LVM partitions for cluster
   hosts: nodes
   become: true
-  gather_facts: true
+  gather_facts: false
 
   tasks:
     - name: Grow var volume
@@ -53,31 +53,6 @@
       ansible.posix.mount:
         src: "/dev/{{ volume_group }}/k3s_data"
         path: /var/lib/rancher/k3s/
-        fstype: ext4
-        opts: "defaults"
-        state: mounted
-        boot: true
-
-    - name: Create storage volume
-      community.general.lvol:
-        vg: "{{ volume_group }}"
-        lv: storage
-        size: +100%FREE
-    - name: Create filesystem for cluster storage
-      community.general.filesystem:
-        fstype: ext4
-        dev: "/dev/{{ volume_group }}/storage"
-    - name: Create mountpoint for cluster storage
-      ansible.builtin.file:
-        path: /mnt/storage
-        owner: root
-        group: root
-        mode: "755"
-        state: directory
-    - name: Configure /etc/fstab for cluster storage
-      ansible.posix.mount:
-        src: "/dev/{{ volume_group }}/storage"
-        path: /mnt/storage
         fstype: ext4
         opts: "defaults"
         state: mounted

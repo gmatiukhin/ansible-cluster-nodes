@@ -1,0 +1,13 @@
+- name: Upgrade all packages
+  hosts: nodes
+  become: true
+  gather_facts: false
+
+  tasks:
+    - name: Upgrade
+      ansible.builtin.apt:
+        update_cache: true
+        upgrade: true
+    - name: Autoremove
+      ansible.builtin.apt:
+        autoremove: true

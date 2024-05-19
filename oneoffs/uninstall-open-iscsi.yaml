@@ -9,6 +9,7 @@
         name: iscsid.service
         enabled: false
         state: stopped
+      failed_when: false
     - name: Ensure open-iscsi is not installed
       ansible.builtin.apt:
         name: open-iscsi

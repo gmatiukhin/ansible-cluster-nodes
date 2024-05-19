@@ -31,7 +31,7 @@
     - name: Create initramfs hook file
       ansible.builtin.copy:
         dest: /etc/initramfs-tools/hooks/preclevis
-        mode: u+rwx
+        mode: "0744"
         owner: root
         content: |
           #!/bin/sh
@@ -55,7 +55,7 @@
       ansible.builtin.copy:
         dest: /etc/initramfs-tools/scripts/init-premount/preclevis
         owner: root
-        mode: u+rwx
+        mode: "0744"
         content: |
           #!/bin/sh
           PREREQ=""

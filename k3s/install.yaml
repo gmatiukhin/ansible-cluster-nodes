@@ -1,5 +1,6 @@
-- name: Ask user for cluster info
+- name: Set common facts
   hosts: nodes
+  become: true
   gather_facts: false
 
   vars_prompt:
@@ -13,33 +14,38 @@
       prompt: Please enter private registry password for user `kubernetes`
 
   tasks:
+    - name: Collect ZT network data
+      ansible.builtin.command: zerotier-cli listnetworks
+      changed_when: false
+      register: zerotier_output
     - name: Set common facts
       ansible.builtin.set_fact:
         k3s_url: "{{ url }}"
         k3s_token: "{{ token }}"
-        zerotier_network_id: "{{ network_id }}"
         registry_password: "{{ registry_password }}"
+        node_ip: "{{ (((zerotier_output['stdout_lines'] | select('regex', '.*' + network_id + '.*'))[0] | split)[8] | split('/'))[0] }}"
+        zt_iface: "{{ ((zerotier_output['stdout_lines'] | select('regex', '.*' + network_id + '.*'))[0] | split)[7] }}"
 
-- name: Set topology facts for nettops
+- name: Set common facts for nettops
   hosts: nettops
-  become: true
-  gather_facts: false
+  gather_facts: true
 
   tasks:
-    - name: Set `lab` as a zone for nettops
+    - name: Set common facts for nettops
       ansible.builtin.set_fact:
         topology_zone: lab
+        volume_group: "{{ ansible_hostname | capitalize }}-vg"
 
 
-- name: Set topology facts for proxmox VMs
+- name: Set common facts for proxmox VMs
   hosts: proxmox
-  become: true
-  gather_facts: false
+  gather_facts: true
 
   tasks:
-    - name: Set `proxmox` as a zone for proxmox VMs
+    - name: Set common facts for proxmox VMs
       ansible.builtin.set_fact:
         topology_zone: proxmox
+        volume_group: "{{ ansible_hostname }}-vg"
 
 
 - name: General k3s config
@@ -48,18 +54,11 @@
   gather_facts: false
 
   tasks:
-    - name: Collect ZT network data
-      ansible.builtin.command: zerotier-cli listnetworks
-      changed_when: false
-      register: zerotier_output
-    - name: Set fact about node IP in ZT network
-      ansible.builtin.set_fact:
-        node_ip: "{{ (((zerotier_output['stdout_lines'] | select('regex', '.*' + zerotier_network_id + '.*'))[0] | split)[8] | split('/'))[0] }}"
     - name: Configure ZeroTier blacklist rules
       ansible.builtin.copy:
         dest: /var/lib/zerotier-one/local.conf
         owner: root
-        mode: "0744"
+        mode: "0644"
         content: |
           {
             "physical": {
@@ -76,7 +75,7 @@
     - name: Create registry config file
       ansible.builtin.copy:
         dest: /etc/rancher/k3s/registries.yaml
-        mode: "0744"
+        mode: "0644"
         owner: root
         content: |
           configs:
@@ -84,6 +83,14 @@
               auth:
                 username: kubernetes
                 password: {{ registry_password }}
+    - name: Download k3s install script
+      ansible.builtin.uri:
+        url: https://get.k3s.io
+        dest: /usr/local/bin/k3s-install.sh
+        creates: /usr/local/bin/k3s-install.sh
+        mode: "0755"
+        owner: root
+        group: root
 
 
 - name: Servers
@@ -96,7 +103,7 @@
       ansible.builtin.copy:
         dest: /etc/rancher/k3s/config.yaml
         owner: root
-        mode: "0744"
+        mode: "0644"
         content: |
           write-kubeconfig-mode: "0644"
           cluster-cidr: 10.8.0.0/16
@@ -109,15 +116,10 @@
           token: {{ k3s_token }}
           server: https://{{ k3s_url }}:6443
           node-label: topology.kubernetes.io/zone={{ topology_zone }}
-          flannel-iface: ztwziqfn4m
+          flannel-iface: {{ zt_iface }}
           flannel-backend: wireguard-native
-    - name: Download k3s install script
-      ansible.builtin.uri:
-        url: https://get.k3s.io
-        dest: /tmp/install-k3s.sh
-        creates: /tmp/install-k3s.sh
     - name: Install k3s server
-      ansible.builtin.command: bash /tmp/install-k3s.sh server
+      ansible.builtin.command: k3s-install.sh server
       changed_when: true
 
 
@@ -131,20 +133,15 @@
       ansible.builtin.copy:
         dest: /etc/rancher/k3s/config.yaml
         owner: root
-        mode: "0744"
+        mode: "0644"
         content: |
           node-ip: {{ node_ip }}
           token: {{ k3s_token }}
           server: https://{{ k3s_url }}:6443
           node-label: topology.kubernetes.io/zone={{ topology_zone }}
-          flannel-iface: ztwziqfn4m
-    - name: Download k3s install script
-      ansible.builtin.uri:
-        url: https://get.k3s.io
-        dest: /tmp/install-k3s.sh
-        creates: /tmp/install-k3s.sh
+          flannel-iface: {{ zt_iface }}
     - name: Install k3s agent
-      ansible.builtin.command: bash /tmp/install-k3s.sh agent
+      ansible.builtin.command: k3s-install.sh agent
       changed_when: true
 
 

@@ -27,7 +27,7 @@
         creates: /home/gmatiukhin/.ssh/authorized_keys
         owner: gmatiukhin
         group: gmatiukhin
-        mode: '0700'
+        mode: '0600'
     - name: Allow SSH public key authentication
       ansible.builtin.lineinfile:
         path: /etc/ssh/sshd_config

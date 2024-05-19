@@ -10,7 +10,7 @@
       changed_when: output.rc == 0
 
 
-- name: Remove k3s agents
+- name: Remove k3s from agents
   hosts: agents
   become: true
   gather_facts: false
