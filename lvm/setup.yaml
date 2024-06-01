@@ -57,3 +57,11 @@
         opts: "defaults"
         state: mounted
         boot: true
+    - name: Enable dm_crypt kernel module
+      community.general.modprobe:
+        name: dm_crypt
+        persistent: present
+    - name: Enable dm_thin_pool kernel module
+      community.general.modprobe:
+        name: dm_thin_pool
+        persistent: present
