@@ -58,7 +58,7 @@
       ansible.builtin.copy:
         dest: /var/lib/zerotier-one/local.conf
         owner: root
-        mode: "0644"
+        mode: "0655"
         content: |
           {
             "physical": {
@@ -71,13 +71,19 @@
       ansible.builtin.file:
         path: "/etc/rancher/k3s/"
         state: directory
-        mode: "0744"
+        mode: "0755"
     - name: Create registry config file
       ansible.builtin.copy:
         dest: /etc/rancher/k3s/registries.yaml
-        mode: "0644"
+        mode: "0655"
         owner: root
         content: |
+          mirrors:
+            docker.io:
+              endpoint:
+                - "https://huecker.io"
+                - "https://mirror.gcr.io"
+                - "https://quay.io"
           configs:
             "registry.gmatiukhin.site":
               auth:
@@ -103,7 +109,7 @@
       ansible.builtin.copy:
         dest: /etc/rancher/k3s/config.yaml
         owner: root
-        mode: "0644"
+        mode: "0655"
         content: |
           write-kubeconfig-mode: "0644"
           cluster-cidr: 10.8.0.0/16
@@ -133,7 +139,7 @@
       ansible.builtin.copy:
         dest: /etc/rancher/k3s/config.yaml
         owner: root
-        mode: "0644"
+        mode: "0655"
         content: |
           node-ip: {{ node_ip }}
           token: {{ k3s_token }}
