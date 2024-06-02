@@ -17,7 +17,7 @@
   tasks:
     - name: Set common facts for proxmox VMs
       ansible.builtin.set_fact:
-        volume_group: "{{ ansible_hostname }}-vg"
+        volume_group: '{{ ansible_hostname | replace("-", "") }}'
 
 
 - name: Setup LVM partitions for cluster
@@ -57,11 +57,18 @@
         opts: "defaults"
         state: mounted
         boot: true
-    - name: Enable dm_crypt kernel module
+
+- name: Enable kernel modules
+  hosts: nodes
+  become: true
+  gather_facts: false
+
+  tasks:
+    - name: Enable dm_crypt
       community.general.modprobe:
         name: dm_crypt
         persistent: present
-    - name: Enable dm_thin_pool kernel module
+    - name: Enable dm_thin_pool
       community.general.modprobe:
         name: dm_thin_pool
         persistent: present

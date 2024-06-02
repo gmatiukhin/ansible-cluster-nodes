@@ -15,6 +15,7 @@ all:
     proxmox1:
       ansible_host: 10.42.128.30
   vars:
+    ansible_python_interpreter: auto_silent # live dangerously
     ansible_ssh_private_key_file: ./keys/id_ed25519
     ansible_user: ansible
     become_method: sudo
@@ -30,7 +31,7 @@ nettops:
 
 proxmox:
   hosts:
-    proxmox1:
+    pve-k3s-1:
 
 servers:
 agents:
