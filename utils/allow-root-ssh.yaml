@@ -1,0 +1,22 @@
+- name: Allows ssh access as root with password
+  hosts: nodes
+  become: true
+  gather_facts: false
+
+  tasks:
+    - name: Allow passsword
+      ansible.builtin.lineinfile:
+        path: /etc/ssh/sshd_config
+        regexp: '^PasswordAuthentication no'
+        state: present
+        line: "PasswordAuthentication yes"
+    - name: Allow root ssh
+      ansible.builtin.lineinfile:
+        path: /etc/ssh/sshd_config
+        regexp: '^#PermitRootLogin prohibit-password'
+        state: present
+        line: "PermitRootLogin yes"
+    - name: Restart ssh
+      ansible.builtin.systemd_service:
+        name: ssh.service
+        state: restarted
