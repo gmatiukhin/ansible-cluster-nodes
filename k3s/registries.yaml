@@ -1,0 +1,21 @@
+- name: Set common facts
+  hosts: nodes
+  become: true
+  gather_facts: false
+
+  vars_prompt:
+    - name: registry_password
+      prompt: Please enter private registry password for user `kubernetes`
+
+  tasks:
+    - name: Create registry config file
+      ansible.builtin.copy:
+        dest: /etc/rancher/k3s/registries.yaml
+        mode: "0655"
+        owner: root
+        content: |
+          configs:
+            "registry.gmatiukhin.site":
+              auth:
+                username: kubernetes
+                password: {{ registry_password }}

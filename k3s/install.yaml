@@ -26,28 +26,6 @@
         node_ip: "{{ (((zerotier_output['stdout_lines'] | select('regex', '.*' + network_id + '.*'))[0] | split)[8] | split('/'))[0] }}"
         zt_iface: "{{ ((zerotier_output['stdout_lines'] | select('regex', '.*' + network_id + '.*'))[0] | split)[7] }}"
 
-- name: Set common facts for nettops
-  hosts: nettops
-  gather_facts: true
-
-  tasks:
-    - name: Set common facts for nettops
-      ansible.builtin.set_fact:
-        topology_zone: lab
-        volume_group: "{{ ansible_hostname | capitalize }}-vg"
-
-
-- name: Set common facts for proxmox VMs
-  hosts: proxmox
-  gather_facts: true
-
-  tasks:
-    - name: Set common facts for proxmox VMs
-      ansible.builtin.set_fact:
-        topology_zone: proxmox
-        volume_group: "{{ ansible_hostname }}-vg"
-
-
 - name: General k3s config
   hosts: nodes
   become: true

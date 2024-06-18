@@ -1,31 +1,13 @@
-- name: Set common parameters for nettops
-  hosts: nettops
-  become: true
-  gather_facts: true
-
-  tasks:
-    - name: Set common facts
-      ansible.builtin.set_fact:
-        volume_group: "{{ ansible_hostname | capitalize }}-vg"
-
-
-- name: Set common parameters for proxmox VMs
-  hosts: proxmox
-  become: true
-  gather_facts: true
-
-  tasks:
-    - name: Set common facts
-      ansible.builtin.set_fact:
-        volume_group: "{{ ansible_hostname }}-vg"
-
-
 - name: Remove k3s_data LVM partition
   hosts: nodes
   become: true
-  gather_facts: true
+  gather_facts: false
 
   tasks:
+    - name: Set root volume group
+      ansible.builtin.set_fact:
+        volume_group: rootvg
+
     - name: Remove /etc/fstab entry for k3s_data
       ansible.posix.mount:
         src: "/dev/{{ volume_group }}/k3s_data"
