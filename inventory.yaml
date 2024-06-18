@@ -12,8 +12,8 @@ all:
       ansible_host: 10.42.56.81
     europa:
       ansible_host: 10.42.56.82
-    proxmox1:
-      ansible_host: 10.42.128.30
+    pve-k3s-1:
+      ansible_host: 10.42.56.83
   vars:
     ansible_python_interpreter: auto_silent # live dangerously
     ansible_ssh_private_key_file: ./keys/id_ed25519
