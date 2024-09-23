@@ -1,21 +1,21 @@
 all:
   hosts:
     ceres:
-      ansible_host: 10.42.56.77
+      ansible_host: 10.147.18.191
     vesta:
-      ansible_host: 10.42.56.78
+      ansible_host: 10.147.18.16
     pallas:
-      ansible_host: 10.42.56.79
+      ansible_host: 10.147.18.123
     hygiea:
-      ansible_host: 10.42.56.80
+      ansible_host: 10.147.18.137
     interamnia:
-      ansible_host: 10.42.56.81
+      ansible_host: 10.147.18.238
     europa:
-      ansible_host: 10.42.56.82
+      ansible_host: 10.147.18.231
     pve-k3s-1:
-      ansible_host: 10.42.56.83
+      ansible_host: 10.147.18.54
     pve-k3s-2:
-      ansible_host: 10.42.56.84
+      ansible_host: 10.147.18.2
   vars:
     ansible_python_interpreter: auto_silent # live dangerously
     ansible_ssh_private_key_file: ./keys/id_ed25519

@@ -26,6 +26,27 @@
         node_ip: "{{ (((zerotier_output['stdout_lines'] | select('regex', '.*' + network_id + '.*'))[0] | split)[8] | split('/'))[0] }}"
         zt_iface: "{{ ((zerotier_output['stdout_lines'] | select('regex', '.*' + network_id + '.*'))[0] | split)[7] }}"
 
+
+- name: Set common facts for nettops
+  hosts: nettops
+  gather_facts: true
+
+  tasks:
+    - name: Set common facts for nettops
+      ansible.builtin.set_fact:
+        topology_zone: lab
+
+
+- name: Set common facts for proxmox VMs
+  hosts: proxmox
+  gather_facts: true
+
+  tasks:
+    - name: Set common facts for proxmox VMs
+      ansible.builtin.set_fact:
+        topology_zone: proxmox
+
+
 - name: General k3s config
   hosts: nodes
   become: true
@@ -102,6 +123,7 @@
           node-label: topology.kubernetes.io/zone={{ topology_zone }}
           flannel-iface: {{ zt_iface }}
           flannel-backend: wireguard-native
+          kubelet-arg: allowed-unsafe-sysctls=net.ipv4.conf.all.src_valid_mark,net.ipv6.conf.all.disable_ipv6,net.ipv4.ip_forward
     - name: Install k3s server
       ansible.builtin.command: k3s-install.sh server
       changed_when: true
@@ -124,6 +146,7 @@
           server: https://{{ k3s_url }}:6443
           node-label: topology.kubernetes.io/zone={{ topology_zone }}
           flannel-iface: {{ zt_iface }}
+          kubelet-arg: allowed-unsafe-sysctls=net.ipv4.conf.all.src_valid_mark,net.ipv6.conf.all.disable_ipv6,net.ipv4.ip_forward
     - name: Install k3s agent
       ansible.builtin.command: k3s-install.sh agent
       changed_when: true
@@ -135,7 +158,7 @@
   gather_facts: false
 
   tasks:
-    - name: Ensure nfs-common are installed
+    - name: Ensure nfs-common is installed
       ansible.builtin.apt:
         name: nfs-common
         state: present

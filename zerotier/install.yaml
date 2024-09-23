@@ -36,10 +36,11 @@
     - name: Download ZeroTier install script
       ansible.builtin.uri:
         url: https://install.zerotier.com/
-        # dest: /tmp/install-zt.sh
-        # creates: /tmp/install-zt.sh
         dest: /usr/local/bin/zerotier-instal.sh
         creates: /usr/local/bin/zerotier-instal.sh
+        mode: "0755"
+        owner: root
+        group: root
     - name: Verify ZeroTier install script
       ansible.builtin.command: gpg --verify /usr/local/bin/zerotier-instal.sh
       changed_when: false

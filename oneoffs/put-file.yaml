@@ -1,0 +1,13 @@
+- name: Put script to rename root vg on each machine
+  hosts: nodes
+  become: true
+  gather_facts: false
+
+  tasks:
+    - name: Copy file
+      ansible.builtin.copy:
+        src: ../files/rootvgrename.sh
+        dest: /root/
+        owner: root
+        group: root
+        mode: "0744"

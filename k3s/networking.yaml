@@ -13,7 +13,7 @@
         path: /etc/network/interfaces
         regexp: '^dns-nameservers'
         state: present
-        line: "dns-nameservers 10.14.0.10 10.42.0.3"
+        line: "dns-nameservers 10.14.0.10 10.42.1.1"
         insertafter: "EOF"
     - name: Specify dns search
       ansible.builtin.lineinfile:
